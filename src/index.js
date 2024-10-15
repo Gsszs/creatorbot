@@ -77,8 +77,6 @@ const sendStatusUpdate = async () => {
     const formattedMemoryUsage = `${Math.round(memoryUsage * 100) / 100} MB`;
 
     const serverCount = client.guilds.cache.size;
-
-    if (moderatorsOnlineCount == 0, "0") moderatorsOnlineCount = "Counting..."
     const embed = new EmbedBuilder()
         .setColor('#0099ff')
         .setTitle('**Bot Status**')
