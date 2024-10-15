@@ -79,7 +79,7 @@ const sendStatusUpdate = async () => {
     const serverCount = client.guilds.cache.size;
     const embed = new EmbedBuilder()
         .setColor('#0099ff')
-        .setTitle(`**Bot Status - ${client.name}**`)
+        .setTitle(`**Bot Status - 1.0.1**`)
         .addFields(
             { name: '🌐 Status', value: isBotOnline ? `Online` : `Offline`, inline: false },
             { name: '🕒 Uptime', value: `${formattedUptime}\n`, inline: false },
