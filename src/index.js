@@ -1,9 +1,7 @@
 require("dotenv").config();
 const { Client, IntentsBitField, EmbedBuilder, PermissionsBitField } = require("discord.js");
-const chatID = "1268306951696289802";
-const pingChat = "1295544141387927580";
-const correctEmojiID = "1238948417938395166";
-const incorrectEmojiID = "1238948281019666542";
+const { chatID, pingChat, correctEmojiID, incorrectEmojiID } = require("./IDs")
+const { SendEmbedRegister } = require("./reaction_roles")
 
 const client = new Client({
     intents: [
@@ -15,8 +13,8 @@ const client = new Client({
     ]
 });
 
-let errorCount = 0;
 let isBotOnline = true;
+let moderatorsOnlineCount = 0;
 
 async function createThreadIfNeeded(message) {
 
@@ -69,34 +67,23 @@ const sendStatusUpdate = async () => {
     }
 
     const uptime = process.uptime();
+    const days = Math.floor(uptime / 86400);
     const hours = Math.floor(uptime / 3600);
     const minutes = Math.floor((uptime % 3600) / 60);
     const seconds = Math.floor(uptime % 60);
-    const formattedUptime = `__**${hours}**h **${minutes}**m **${seconds}**s__`;
+    const formattedUptime = `__**${days}**d **${hours}**h **${minutes}**m **${seconds}**s__`;
 
     const memoryUsage = process.memoryUsage().heapUsed / 1024 / 1024;
     const formattedMemoryUsage = `${Math.round(memoryUsage * 100) / 100} MB`;
 
     const serverCount = client.guilds.cache.size;
-    let moderatorsOnlineCount = 0;
-    const members = await channel.guild.members.fetch();
-    
-    members.forEach(member => {
-        if (!member.user.bot) {
-            const isAdmin = member.permissions.has(PermissionsBitField.Flags.Administrator);
-            const hasStaffRole = member.roles.cache.some(role => role.name === "Staff Team");
 
-            if ((isAdmin || hasStaffRole) && (member.presence?.status !== 'undefined')) {
-                moderatorsOnlineCount++;
-            }
-        }
-    });    
-
+    if (moderatorsOnlineCount == 0, "0") moderatorsOnlineCount = "Counting..."
     const embed = new EmbedBuilder()
         .setColor('#0099ff')
         .setTitle('**Bot Status**')
         .addFields(
-            { name: '🌐 Status', value: isBotOnline ? '✅ Online' : '❌ Offline', inline: true },
+            { name: '🌐 Status', value: isBotOnline ? `Online` : `Offline`, inline: true },
             { name: '🕒 Uptime', value: `${formattedUptime}\n`, inline: true },
             { name: '🏠 Servers count', value: `${serverCount}\n`, inline: true },
             { name: '👮 Staffs On-line', value: `${moderatorsOnlineCount}\n`, inline: true },
@@ -105,7 +92,31 @@ const sendStatusUpdate = async () => {
         .setTimestamp();
 
     await channel.send({ embeds: [embed] });
-}
+
+    updateModeratorsCount(channel);
+};
+
+const updateModeratorsCount = async (channel) => {
+    const members = await channel.guild.members.fetch({ withPresences: true });
+
+    let newModeratorsOnlineCount = 0;
+
+    members.forEach(member => {
+        if (member.user.bot) return;
+        const isAdmin = member.permissions.has(PermissionsBitField.Flags.Administrator);
+        const hasStaffRole = member.roles.cache.some(role => role.name === "Staff Team");
+        if (!isAdmin && !hasStaffRole) return;
+
+        const status = member.presence?.status;
+        console.log(`Member: ${member.user.tag} / Admin: ${isAdmin} / Staff Role: ${hasStaffRole} / Status: ${status}`);
+
+        if (status && status !== 'offline') {
+            newModeratorsOnlineCount++;
+        }
+    });
+
+    moderatorsOnlineCount = newModeratorsOnlineCount;
+};
 
 async function CheckChannelCriacoes() {
     const channel = await client.channels.fetch(chatID);
@@ -122,28 +133,20 @@ async function CheckChannelCriacoes() {
     });
 }
 
+async function startStatusUpdates() {
+    await sendStatusUpdate();
+    setInterval(sendStatusUpdate, 3600000);
+}
 
 async function startStatusUpdates() {
     await sendStatusUpdate();
     setInterval(sendStatusUpdate, 3600000);
 }
 
-client.on("error", async (error) => {
-    errorCount++;
-    console.error("Erro no bot:", error);
-});
-
-// client.on("interactionCreate", (interaction) => {
-//     if (!interaction.isChatInputCommand()) return;
-
-//     if (interaction.name == 'status') {
-//         interaction.reply("I'm on-line!")
-//     }
-// })
-
 client.on("ready", (c) => {
     console.log(`✅ Bot ${client.user.tag} is online.`);
     
+    SendEmbedRegister();
     CheckChannelCriacoes();
     startStatusUpdates();
 });
