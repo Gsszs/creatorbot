@@ -1,3 +1,3 @@
 # To initialize
 
-npm i
+`npm i`
