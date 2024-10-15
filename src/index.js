@@ -1,7 +1,7 @@
 require("dotenv").config();
 const { Client, IntentsBitField, EmbedBuilder, PermissionsBitField } = require("discord.js");
 const { chatID, pingChat, correctEmojiID, incorrectEmojiID } = require("./IDs")
-const { SendEmbedRegister } = require("./reaction_roles")
+// const { SendEmbedRegister } = require("./reaction_roles")
 
 const client = new Client({
     intents: [
@@ -81,39 +81,14 @@ const sendStatusUpdate = async () => {
         .setColor('#0099ff')
         .setTitle('**Bot Status**')
         .addFields(
-            { name: '🌐 Status', value: isBotOnline ? `Online` : `Offline`, inline: true },
-            { name: '🕒 Uptime', value: `${formattedUptime}\n`, inline: true },
-            { name: '🏠 Servers count', value: `${serverCount}\n`, inline: true },
-            { name: '👮 Staffs On-line', value: `${moderatorsOnlineCount}\n`, inline: true },
-            { name: '💾 Memory use', value: `${formattedMemoryUsage}\n`, inline: true }               
+            { name: '🌐 Status', value: isBotOnline ? `Online` : `Offline`, inline: false },
+            { name: '🕒 Uptime', value: `${formattedUptime}\n`, inline: false },
+            { name: '🏠 Servers count', value: `${serverCount}\n`, inline: false },
+            { name: '💾 Memory use', value: `${formattedMemoryUsage}\n`, inline: false }               
         )
         .setTimestamp();
 
     await channel.send({ embeds: [embed] });
-
-    updateModeratorsCount(channel);
-};
-
-const updateModeratorsCount = async (channel) => {
-    const members = await channel.guild.members.fetch({ withPresences: true });
-
-    let newModeratorsOnlineCount = 0;
-
-    members.forEach(member => {
-        if (member.user.bot) return;
-        const isAdmin = member.permissions.has(PermissionsBitField.Flags.Administrator);
-        const hasStaffRole = member.roles.cache.some(role => role.name === "Staff Team");
-        if (!isAdmin && !hasStaffRole) return;
-
-        const status = member.presence?.status;
-        console.log(`Member: ${member.user.tag} / Admin: ${isAdmin} / Staff Role: ${hasStaffRole} / Status: ${status}`);
-
-        if (status && status !== 'offline') {
-            newModeratorsOnlineCount++;
-        }
-    });
-
-    moderatorsOnlineCount = newModeratorsOnlineCount;
 };
 
 async function CheckChannelCriacoes() {
@@ -136,15 +111,10 @@ async function startStatusUpdates() {
     setInterval(sendStatusUpdate, 3600000);
 }
 
-async function startStatusUpdates() {
-    await sendStatusUpdate();
-    setInterval(sendStatusUpdate, 3600000);
-}
-
 client.on("ready", (c) => {
     console.log(`✅ Bot ${client.user.tag} is online.`);
     
-    SendEmbedRegister();
+    // SendEmbedRegister();
     CheckChannelCriacoes();
     startStatusUpdates();
 });
