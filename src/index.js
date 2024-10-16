@@ -1,7 +1,6 @@
 require("dotenv").config();
-const { Client, IntentsBitField, EmbedBuilder, PermissionsBitField } = require("discord.js");
+const { Client, IntentsBitField, EmbedBuilder } = require("discord.js");
 const { chatID, pingChat, correctEmojiID, incorrectEmojiID } = require("./IDs")
-// const { SendEmbedRegister } = require("./reaction_roles")
 
 const client = new Client({
     intents: [
@@ -14,7 +13,6 @@ const client = new Client({
 });
 
 let isBotOnline = true;
-let moderatorsOnlineCount = 0;
 
 async function createThreadIfNeeded(message) {
 
@@ -30,7 +28,7 @@ async function createThreadIfNeeded(message) {
             await message.delete()
         } else if (message.attachments.size > 0) {
             const guild = message.guild
-        
+
             const correctEmoji = await guild.emojis.fetch(correctEmojiID);
             const incorrectEmoji = await guild.emojis.fetch(incorrectEmojiID);
 
@@ -68,8 +66,8 @@ const sendStatusUpdate = async () => {
 
     const uptime = process.uptime();
     const days = Math.floor(uptime / 86400);
-    const hours = Math.floor(uptime / 3600);
-    const minutes = Math.floor((uptime % 3600) / 60);
+    const hours = Math.floor((uptime % 86400) / 3600);
+    const minutes = Math.floor((uptime % 3600) / 60);  
     const seconds = Math.floor(uptime % 60);
     const formattedUptime = `__**${days}**d **${hours}**h **${minutes}**m **${seconds}**s__`;
 
@@ -84,7 +82,7 @@ const sendStatusUpdate = async () => {
             { name: '🌐 Status', value: isBotOnline ? `Online` : `Offline`, inline: false },
             { name: '🕒 Uptime', value: `${formattedUptime}\n`, inline: false },
             { name: '🏠 Servers count', value: `${serverCount}\n`, inline: false },
-            { name: '💾 Memory use', value: `${formattedMemoryUsage}\n`, inline: false }               
+            { name: '💾 Memory use', value: `${formattedMemoryUsage}\n`, inline: false }
         )
         .setTimestamp();
 
@@ -113,7 +111,10 @@ async function startStatusUpdates() {
 
 client.on("ready", (c) => {
     console.log(`✅ Bot ${client.user.tag} is online.`);
-    
+
+
+    // SendEmbedRegister();
+
     // SendEmbedRegister();
     CheckChannelCriacoes();
     startStatusUpdates();
