@@ -112,10 +112,6 @@ async function startStatusUpdates() {
 client.on("ready", (c) => {
     console.log(`✅ Bot ${client.user.tag} is online.`);
 
-
-    // SendEmbedRegister();
-
-    // SendEmbedRegister();
     CheckChannelCriacoes();
     startStatusUpdates();
 });
