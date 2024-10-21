@@ -1,12 +1,13 @@
 require("dotenv").config();
 const { Client, IntentsBitField, EmbedBuilder } = require("discord.js");
-const { chatID, pingChat, correctEmojiID, incorrectEmojiID } = require("./IDs")
+const { chatID, pingChat, correctEmojiID, incorrectEmojiID, destaquesChatID, criacoesChatID, starEmojiID } = require("./IDs")
 
 const client = new Client({
     intents: [
         IntentsBitField.Flags.Guilds,
         IntentsBitField.Flags.GuildMembers,
         IntentsBitField.Flags.GuildMessages,
+        IntentsBitField.Flags.GuildMessageReactions,
         IntentsBitField.Flags.MessageContent,
         IntentsBitField.Flags.GuildPresences
     ]
@@ -47,9 +48,18 @@ async function createThreadIfNeeded(message) {
         } else {
             await message.delete();
             const sentMessage = await message.channel.send(`<@${message.author.id}> você não pode enviar mensagens sem arquivos nesse canal!`);
-            setTimeout(() => {
-                sentMessage.delete().catch(error => console.error("Erro ao tentar apagar a mensagem:", error));
-            }, 15000);
+
+            const timeout = setTimeout(() => {
+                sentMessage.delete().catch(error => console.log("Erro ao apagar a mensagem: ", error));
+            }, 5000);
+
+            client.on("messageDelete", (message) => {
+                if (message.author.id == sentMessage.author.id) {
+                    console.log("Mensagem deletada por outro usuário, cancelando timeout");
+                    clearTimeout(timeout);
+                }
+
+            })
         }
     } else {
         console.log(`Thread já existe para a mensagem: ${message.id}`);
@@ -109,11 +119,91 @@ async function startStatusUpdates() {
     setInterval(sendStatusUpdate, 3600000);
 }
 
+async function countMentions(userId, channelId) {
+    const channel = await client.channels.fetch(channelId);
+    const messages = await channel.messages.fetch({ limit: 100 });
+    let mentionCount = 0;
+
+    messages.forEach(message => {
+        if (message.mentions.has(userId)) {
+            mentionCount++;
+        }
+    });
+
+    return mentionCount;
+}
+
+async function handleReaction(reaction) {
+    const message = reaction.message;
+
+    if (reaction.emoji.id === correctEmojiID && reaction.count >= 20 && !message.reactions.cache.has(starEmojiID)) {
+        
+        const destaquesChannel = await client.channels.fetch(destaquesChatID);
+
+        if (destaquesChannel) {
+            if (message.attachments.size > 0) {
+                await destaquesChannel.send({
+                    content: `# <@${message.author.id}>\n\n> - ${message.content || "*Sem descrição*"}`,
+                    files: message.attachments.map(attachment => ({
+                        attachment: attachment.url,
+                        name: attachment.name
+                    }))
+                });
+
+                await message.react(starEmojiID);
+
+                const member = await message.guild.members.fetch(message.author.id);
+
+                const mentionCount = await countMentions(message.author.id, destaquesChatID);
+                let roleId;
+
+                switch (true) {
+                    case (mentionCount >= 1 && mentionCount <= 4):
+                        roleId = '1256153440325730324';
+                        break;
+                    case (mentionCount >= 5 && mentionCount <= 9):
+                        roleId = '1297992077279498271';
+                        break;
+                    case (mentionCount >= 10):
+                        roleId = '1297992125924769823';
+                        break;
+                    default:
+                        roleId = null;
+                }
+
+                if (roleId) {
+                    try {
+                        await member.roles.add(roleId);
+                    } catch (error) {
+                        console.error(`Erro ao adicionar cargo: ${error}`);
+                    }
+                }
+            }
+        }
+    }
+}
+
 client.on("ready", (c) => {
     console.log(`✅ Bot ${client.user.tag} is online.`);
 
     CheckChannelCriacoes();
     startStatusUpdates();
+});
+
+client.on('messageReactionAdd', async (reaction, user) => {
+    if (user.bot) return;
+
+    if (reaction.message.channelId === criacoesChatID) {
+        await handleReaction(reaction, user, 'adicionada');
+    }
+});
+
+client.on('messageReactionRemove', async (reaction, user) => {
+    if (user.bot) return;
+
+    if (reaction.message.channelId === criacoesChatID) {
+        await handleReaction(reaction, user, 'removida');
+    }
 });
 
 client.login(process.env.TOKEN);
