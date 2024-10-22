@@ -143,114 +143,76 @@ async function countMentions(userId, channelId) {
     }
 }
 
-async function handleReaction(reaction) {
-    console.log("Iniciando a função handleReaction.");
+async function handleReaction(reaction, user) {
+    console.log("Iniciando handleReaction...");
+
+    // Verifica se a reação foi adicionada por um bot
+    if (user.bot) {
+        console.log("Reação ignorada pois foi feita por um bot.");
+        return;
+    }
+
+    const message = reaction.message;
+    const guild = message.guild;
+
+    // Verifica se os IDs de emojis estão definidos corretamente
+    console.log("Correct Emoji ID:", correctEmojiID || "não definido");
+    console.log("Incorrect Emoji ID:", incorrectEmojiID || "não definido");
+    console.log("Star Emoji ID:", starEmojiID || "não definido");
+
+    // Variáveis para os emojis
+    let correctEmoji, incorrectEmoji, starEmoji;
+
+    console.log("Buscando emojis no servidor...");
+
     try {
-        const message = reaction.message;
-        const guild = message.guild;
+        correctEmoji = await guild.emojis.fetch(correctEmojiID);
+        incorrectEmoji = await guild.emojis.fetch(incorrectEmojiID);
+        starEmoji = await guild.emojis.fetch(starEmojiID);
 
-        // Verifica se os emojis existem
-        let correctEmoji;
-        let incorrectEmoji;
-        let starEmoji;
+        console.log("Emojis carregados com sucesso.");
+        console.log("Correct Emoji:", correctEmoji ? correctEmoji.toString() : "não encontrado");
+        console.log("Incorrect Emoji:", incorrectEmoji ? incorrectEmoji.toString() : "não encontrado");
+        console.log("Star Emoji:", starEmoji ? starEmoji.toString() : "não encontrado");
+    } catch (fetchError) {
+        console.error("Erro ao buscar os emojis:", fetchError);
+        return;  // Sai da função se falhar ao buscar os emojis
+    }
 
-        console.log("Buscando emojis...");
+    // Usa o emoji padrão de estrela se o customizado não for encontrado
+    const starEmojiToUse = starEmoji ? starEmoji : '⭐️';
+    console.log("Emoji de estrela a ser usado:", starEmojiToUse);
+
+    // Lógica de verificação para o emoji correto
+    console.log("Verificando se a reação é o correctEmoji e possui 20 ou mais reações.");
+    if (reaction.emoji.id === correctEmojiID && reaction.count >= 20) {
+        console.log("A reação é o correctEmoji e possui 20 ou mais reações.");
+        
         try {
-            correctEmoji = await guild.emojis.fetch(correctEmojiID);
-            incorrectEmoji = await guild.emojis.fetch(incorrectEmojiID);
-            starEmoji = await guild.emojis.fetch(starEmojiID);
-            console.log("Emojis buscados com sucesso.");
-        } catch (error) {
-            console.error("Erro ao buscar os emojis: ", error);
+            // Reage com o emoji de estrela
+            await message.react(starEmojiToUse);
+            console.log("Reagiu com o emoji de estrela:", starEmojiToUse);
+        } catch (reactError) {
+            console.error("Erro ao reagir com o emoji de estrela:", reactError);
         }
+    } else {
+        console.log("A reação não é o correctEmoji ou não possui 20 reações.");
+    }
 
-        // Define o emoji de estrela padrão caso não exista
-        const starEmojiToUse = starEmoji || '⭐️';
-        console.log("Emoji de estrela definido: ", starEmojiToUse);
-
-        // Verifica se a reação é o correctEmoji e se possui 20 ou mais reações
-        console.log("Verificando se a reação é o correctEmoji e se possui 20 ou mais reações.");
-        if (reaction.emoji.id === correctEmojiID && reaction.count >= 20) {
-            console.log("A reação é o correctEmoji e possui 20 ou mais reações.");
-
-            // Verifica se a mensagem já tem o emoji de estrela ou mais de 2 reações
-            const reactions = message.reactions.cache;
-            const hasStarEmoji = reactions.some(r => r.emoji.id === starEmojiID || r.emoji.name === '⭐️');
-            const totalReactions = reactions.size;
-
-            console.log(`A mensagem já tem o emoji de estrela? ${hasStarEmoji}`);
-            console.log(`Total de reações: ${totalReactions}`);
-
-            if (!hasStarEmoji && totalReactions <= 2) {
-                console.log("A mensagem não tem o emoji de estrela e tem menos de 3 reações.");
-
-                const destaquesChannel = await client.channels.fetch(destaquesChatID);
-                console.log("Canal de destaques encontrado:", destaquesChannel ? destaquesChannel.id : "não encontrado");
-
-                try {
-                    await message.fetch();
-                    console.log("Mensagem obtida com sucesso.");
-                } catch (error) {
-                    console.error("A mensagem não foi encontrada ou foi deletada.", error);
-                    return;
-                }
-
-                if (destaquesChannel) {
-                    if (message.attachments.size > 0) {
-                        console.log("Enviando mensagem com anexos ao canal de destaques.");
-                        await destaquesChannel.send({
-                            content: `# <@${message.author.id}>\n\n> - ${message.content || "*Sem descrição*"}`,
-                            files: message.attachments.map(attachment => ({
-                                attachment: attachment.url,
-                                name: attachment.name
-                            }))
-                        });
-
-                        console.log("Reagindo à mensagem com o emoji de estrela.");
-                        await message.react(starEmojiToUse); // Reage com o emoji encontrado ou o padrão ⭐️
-
-                        const member = await message.guild.members.fetch(message.author.id);
-                        console.log("Membro encontrado:", member.id);
-
-                        const mentionCount = await countMentions(message.author.id, destaquesChatID);
-                        console.log("Contagem de menções:", mentionCount);
-                        let roleId;
-
-                        switch (true) {
-                            case (mentionCount >= 1 && mentionCount <= 4):
-                                roleId = '1256153440325730324';
-                                break;
-                            case (mentionCount >= 5 && mentionCount <= 9):
-                                roleId = '1297992077279498271';
-                                break;
-                            case (mentionCount >= 10):
-                                roleId = '1297992125924769823';
-                                break;
-                            default:
-                                roleId = null;
-                        }
-
-                        if (roleId) {
-                            try {
-                                console.log(`Adicionando cargo ${roleId} ao membro.`);
-                                await member.roles.add(roleId);
-                            } catch (error) {
-                                console.error(`Erro ao adicionar cargo: ${error}`);
-                            }
-                        }
-                    }
-                }
-            } else {
-                console.log("A mensagem já tem o emoji de estrela ou tem mais de 2 reações.");
-                reactions.forEach(reaction => {
-                    console.log(`Emoji: ${reaction.emoji.name}, ID: ${reaction.emoji.id}`);
-                });
-            }
-        } else {
-            console.log("A reação não é o correctEmoji ou não possui 20 reações.");
+    // Lógica de verificação para o emoji incorreto
+    console.log("Verificando se a reação é o incorrectEmoji.");
+    if (reaction.emoji.id === incorrectEmojiID) {
+        console.log("A reação é o incorrectEmoji.");
+        
+        try {
+            // Aqui entra a lógica de tratar a reação do emoji incorrect
+            await message.reply("A resposta foi marcada como incorreta!");
+            console.log("Resposta marcada como incorreta.");
+        } catch (replyError) {
+            console.error("Erro ao responder com 'incorreta':", replyError);
         }
-    } catch (error) {
-        console.error("Erro ao tratar a reação:", error);
+    } else {
+        console.log("A reação não é o incorrectEmoji.");
     }
 }
 
