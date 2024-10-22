@@ -171,7 +171,7 @@ async function handleReaction(reaction) {
                         }))
                     });
 
-                    await message.react('⭐️');
+                    await message.react(starEmoji);
 
                     const member = await message.guild.members.fetch(message.author.id);
 
