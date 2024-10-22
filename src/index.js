@@ -150,7 +150,7 @@ async function handleReaction(reaction) {
         const correctEmoji = await guild.emojis.fetch(correctEmojiID);
         const starEmoji = await guild.emojis.fetch(starEmojiID);
 
-        if (reaction.emoji.equals(correctEmoji) && reaction.count >= 20 && !(message.reactions.cache.has(starEmoji) || message.reactions.cache.has('⭐️'))) {
+        if (reaction.emoji.id === correctEmojiID && reaction.count >= 20 && !(message.reactions.cache.has(starEmojiID) || message.reactions.cache.has('⭐️'))) {
             
             const destaquesChannel = await client.channels.fetch(destaquesChatID);
 
