@@ -146,22 +146,34 @@ async function countMentions(userId, channelId) {
 async function handleReaction(reaction) {
     try {
         const message = reaction.message;
+        const guild = message.guild;
 
+        // Verifica se os emojis existem
+        let correctEmoji;
+        let incorrectEmoji;
+        let starEmoji;
+
+        try {
+            correctEmoji = await guild.emojis.fetch(correctEmojiID);
+            incorrectEmoji = await guild.emojis.fetch(incorrectEmojiID);
+            starEmoji = await guild.emojis.fetch(starEmojiID);
+        } catch (error) {
+            console.error("Erro ao buscar os emojis: ", error);
+        }
+
+        // Define o emoji de estrela padrão caso não exista
+        const starEmojiToUse = starEmoji || '⭐️';
+
+        // Verifica se a reação é o correctEmoji e se possui 20 ou mais reações
         if (reaction.emoji.id === correctEmojiID && reaction.count >= 20) {
 
-            let starEmoji;
-            try {
-                const guild = message.guild;
-                starEmoji = await guild.emojis.fetch(starEmojiID);
-            } catch (error) {
-                console.error("Emoji de estrela não encontrado. Usando emoji padrão ⭐️.");
-                starEmoji = "⭐️";
-            }
+            // Verifica se a mensagem já tem o emoji de estrela ou mais de 2 reações
+            const reactions = message.reactions.cache;
+            const hasStarEmoji = reactions.some(r => r.emoji.id === starEmojiID || r.emoji.name === '⭐️');
+            const totalReactions = reactions.size;
 
-            const reactionCount = message.reactions.cache.size;
-            const hasStarReaction = message.reactions.cache.some(r => r.emoji.id === starEmojiID || r.emoji.name === '⭐️');
+            if (!hasStarEmoji && totalReactions <= 2) {
 
-            if (!hasStarReaction && reactionCount <= 2) {
                 const destaquesChannel = await client.channels.fetch(destaquesChatID);
 
                 try {
@@ -179,11 +191,12 @@ async function handleReaction(reaction) {
                                 attachment: attachment.url,
                                 name: attachment.name
                             }))
-                        })
+                        });
 
-                        await message.react(starEmoji)
+                        await message.react(starEmojiToUse); // Reage com o emoji encontrado ou o padrão ⭐️
 
                         const member = await message.guild.members.fetch(message.author.id);
+
                         const mentionCount = await countMentions(message.author.id, destaquesChatID);
                         let roleId;
 
@@ -210,9 +223,9 @@ async function handleReaction(reaction) {
                         }
                     }
                 }
-            } else if (reactionCount > 2) {
-                console.log(`Mensagem possui mais de 2 reações. IDs das reações:`);
-                message.reactions.cache.forEach(reaction => {
+            } else {
+                console.log(`A mensagem já tem o emoji de estrela ou mais de 2 reações. Reações na mensagem:`);
+                reactions.forEach(reaction => {
                     console.log(`Emoji: ${reaction.emoji.name}, ID: ${reaction.emoji.id}`);
                 });
             }
