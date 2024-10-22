@@ -87,7 +87,7 @@ const sendStatusUpdate = async () => {
     const serverCount = client.guilds.cache.size;
     const embed = new EmbedBuilder()
         .setColor('#0099ff')
-        .setTitle(`**Bot Status - 1.0.1**`)
+        .setTitle(`**Bot Status - 1.2 (beta)**`)
         .addFields(
             { name: '🌐 Status', value: isBotOnline ? `Online` : `Offline`, inline: false },
             { name: '🕒 Uptime', value: `${formattedUptime}\n`, inline: false },
@@ -139,6 +139,13 @@ async function handleReaction(reaction) {
     if (reaction.emoji.id === correctEmojiID && reaction.count >= 20 && !message.reactions.cache.has(starEmojiID)) {
         
         const destaquesChannel = await client.channels.fetch(destaquesChatID);
+
+        try {
+            await message.fetch();
+        } catch (error) {
+            console.error("A mensagem não foi encontrada ou foi deletada.", error);
+            return;
+        }
 
         if (destaquesChannel) {
             if (message.attachments.size > 0) {
