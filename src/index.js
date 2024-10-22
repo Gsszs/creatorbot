@@ -147,7 +147,7 @@ async function handleReaction(reaction) {
     try {
         const message = reaction.message;
 
-        if (reaction.emoji.id === correctEmojiID && reaction.count >= 20 && !message.reactions.cache.has(':yellowstar:')) {
+        if (reaction.emoji.id === correctEmojiID && reaction.count >= 20 && !message.reactions.cache.has('⭐️')) {
             
             const destaquesChannel = await client.channels.fetch(destaquesChatID);
 
@@ -168,7 +168,7 @@ async function handleReaction(reaction) {
                         }))
                     });
 
-                    await message.react(':yellowstar:');
+                    await message.react('⭐️');
 
                     const member = await message.guild.members.fetch(message.author.id);
 
