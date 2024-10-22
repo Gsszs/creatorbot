@@ -1,6 +1,6 @@
 require("dotenv").config();
 const { Client, IntentsBitField, EmbedBuilder } = require("discord.js");
-const { chatID, pingChat, correctEmojiID, incorrectEmojiID, destaquesChatID, criacoesChatID, starEmojiID } = require("./IDs");
+const { chatID, pingChat, correctEmojiID, incorrectEmojiID, destaquesChatID, criacoesChatID } = require("./IDs");
 
 const client = new Client({
     intents: [
@@ -143,76 +143,64 @@ async function countMentions(userId, channelId) {
     }
 }
 
-async function handleReaction(reaction, user) {
-    console.log("Iniciando handleReaction...");
-
-    // Verifica se a reação foi adicionada por um bot
-    if (user.bot) {
-        console.log("Reação ignorada pois foi feita por um bot.");
-        return;
-    }
-
-    const message = reaction.message;
-    const guild = message.guild;
-
-    // Verifica se os IDs de emojis estão definidos corretamente
-    console.log("Correct Emoji ID:", correctEmojiID || "não definido");
-    console.log("Incorrect Emoji ID:", incorrectEmojiID || "não definido");
-    console.log("Star Emoji ID:", starEmojiID || "não definido");
-
-    // Variáveis para os emojis
-    let correctEmoji, incorrectEmoji, starEmoji;
-
-    console.log("Buscando emojis no servidor...");
-
+async function handleReaction(reaction) {
     try {
-        correctEmoji = await guild.emojis.fetch(correctEmojiID);
-        incorrectEmoji = await guild.emojis.fetch(incorrectEmojiID);
-        starEmoji = await guild.emojis.fetch(starEmojiID);
+        const message = reaction.message;
 
-        console.log("Emojis carregados com sucesso.");
-        console.log("Correct Emoji:", correctEmoji ? correctEmoji.toString() : "não encontrado");
-        console.log("Incorrect Emoji:", incorrectEmoji ? incorrectEmoji.toString() : "não encontrado");
-        console.log("Star Emoji:", starEmoji ? starEmoji.toString() : "não encontrado");
-    } catch (fetchError) {
-        console.error("Erro ao buscar os emojis:", fetchError);
-        return;  // Sai da função se falhar ao buscar os emojis
-    }
+        if (reaction.emoji.id === correctEmojiID && reaction.count >= 20 && !message.reactions.cache.has(':yellowstar:')) {
+            
+            const destaquesChannel = await client.channels.fetch(destaquesChatID);
 
-    // Usa o emoji padrão de estrela se o customizado não for encontrado
-    const starEmojiToUse = starEmoji ? starEmoji : '⭐️';
-    console.log("Emoji de estrela a ser usado:", starEmojiToUse);
+            try {
+                await message.fetch();
+            } catch (error) {
+                console.error("A mensagem não foi encontrada ou foi deletada.", error);
+                return;
+            }
 
-    // Lógica de verificação para o emoji correto
-    console.log("Verificando se a reação é o correctEmoji e possui 20 ou mais reações.");
-    if (reaction.emoji.id === correctEmojiID && reaction.count >= 20) {
-        console.log("A reação é o correctEmoji e possui 20 ou mais reações.");
-        
-        try {
-            // Reage com o emoji de estrela
-            await message.react(starEmojiToUse);
-            console.log("Reagiu com o emoji de estrela:", starEmojiToUse);
-        } catch (reactError) {
-            console.error("Erro ao reagir com o emoji de estrela:", reactError);
+            if (destaquesChannel) {
+                if (message.attachments.size > 0) {
+                    await destaquesChannel.send({
+                        content: `# <@${message.author.id}>\n\n> - ${message.content || "*Sem descrição*"}`,
+                        files: message.attachments.map(attachment => ({
+                            attachment: attachment.url,
+                            name: attachment.name
+                        }))
+                    });
+
+                    await message.react(':yellowstar:');
+
+                    const member = await message.guild.members.fetch(message.author.id);
+
+                    const mentionCount = await countMentions(message.author.id, destaquesChatID);
+                    let roleId;
+
+                    switch (true) {
+                        case (mentionCount >= 1 && mentionCount <= 4):
+                            roleId = '1256153440325730324';
+                            break;
+                        case (mentionCount >= 5 && mentionCount <= 9):
+                            roleId = '1297992077279498271';
+                            break;
+                        case (mentionCount >= 10):
+                            roleId = '1297992125924769823';
+                            break;
+                        default:
+                            roleId = null;
+                    }
+
+                    if (roleId) {
+                        try {
+                            await member.roles.add(roleId);
+                        } catch (error) {
+                            console.error(`Erro ao adicionar cargo: ${error}`);
+                        }
+                    }
+                }
+            }
         }
-    } else {
-        console.log("A reação não é o correctEmoji ou não possui 20 reações.");
-    }
-
-    // Lógica de verificação para o emoji incorreto
-    console.log("Verificando se a reação é o incorrectEmoji.");
-    if (reaction.emoji.id === incorrectEmojiID) {
-        console.log("A reação é o incorrectEmoji.");
-        
-        try {
-            // Aqui entra a lógica de tratar a reação do emoji incorrect
-            await message.reply("A resposta foi marcada como incorreta!");
-            console.log("Resposta marcada como incorreta.");
-        } catch (replyError) {
-            console.error("Erro ao responder com 'incorreta':", replyError);
-        }
-    } else {
-        console.log("A reação não é o incorrectEmoji.");
+    } catch (error) {
+        console.error("Erro ao tratar a reação:", error);
     }
 }
 
