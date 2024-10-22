@@ -220,10 +220,6 @@ client.on('messageReactionAdd', async (reaction, user) => {
 
 client.on('messageReactionRemove', async (reaction, user) => {
     if (user.bot) return;
-
-    if (reaction.message.channelId === criacoesChatID) {
-        await handleReaction(reaction);
-    }
 });
 
 client.login(process.env.TOKEN);
