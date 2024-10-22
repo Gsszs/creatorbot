@@ -6,6 +6,6 @@ const correctEmojiID = "1238948417938395166";
 const incorrectEmojiID = "1238948281019666542";
 const criacoesChatID = "1268306951696289802";
 const destaquesChatID = "1268306944657981443";
-const starEmojiID = "1297990775451291789";
+const starEmojiID = "1254476086532898958";
 
 module.exports = { chatID, pingChat, correctEmojiID, incorrectEmojiID, destaquesChatID, criacoesChatID, starEmojiID };
