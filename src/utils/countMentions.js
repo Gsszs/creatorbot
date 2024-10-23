@@ -12,4 +12,4 @@ async function countMentions(userId, channelId) {
     return mentionCount;
 }
 
-module.exports = { countMentions };
+module.exports = { countMentions }

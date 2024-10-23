@@ -3,10 +3,8 @@ const { countMentions } = require('../utils/countMentions');
 
 async function handleReactionLogic(reaction, client) {
     const message = reaction.message;
-    const guild = message.guild;
 
     try {
-        const starEmoji = await guild.emojis.fetch(starEmojiID);
         if (reaction.emoji.id === correctEmojiID && reaction.count >= 20 && !message.reactions.cache.has(starEmojiID)) {
             const destaquesChannel = await client.channels.fetch(destaquesChatID);
             if (destaquesChannel) {
