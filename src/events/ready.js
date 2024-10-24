@@ -4,7 +4,7 @@ const { criacoesChatID } = require('../config/IDs');
 
 async function checkChannelCriacoes(client) {
     const channel = await client.channels.fetch(criacoesChatID);
-    const messages = await channel.messages.fetch({ limit: 100 });
+    const messages = await channel.messages.fetch();
 
     for (const message of messages.values()) {
         if (message.author.id === client.user.id || message.channelId !== criacoesChatID) continue;
