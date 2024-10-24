@@ -5,7 +5,9 @@ async function handleReactionLogic(reaction, client) {
     const message = reaction.message;
 
     try {
-        if (reaction.emoji.id === correctEmojiID && reaction.count >= 20 && !message.reactions.cache.has(starEmojiID)) {
+        const starEmoji = client.emojis.cache.get(starEmojiID)
+        
+        if (reaction.emoji.id === correctEmojiID && reaction.count >= 20 && !message.reactions.cache.has(starEmoji.id)) {
             const destaquesChannel = await client.channels.fetch(destaquesChatID);
             if (destaquesChannel) {
                 if (message.attachments.size > 0) {
@@ -14,8 +16,8 @@ async function handleReactionLogic(reaction, client) {
                         files: message.attachments.map(attachment => ({ attachment: attachment.url, name: attachment.name }))
                     });
 
-                    await message.react(starEmojiID);
-                    await messageSend.react(starEmojiID);
+                    await message.react(starEmoji);
+                    await messageSend.react(starEmoji);
                     
                     const member = await message.guild.members.fetch(message.author.id);
                     const mentionCount = await countMentions(message.author.id, destaquesChatID);
