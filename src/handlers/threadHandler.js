@@ -11,9 +11,9 @@ async function createThreadIfNeeded(message, client) {
             if (message.author.bot || message.type === 'THREAD_STARTER_MESSAGE') {
                 await message.delete();
             } else if (message.attachments.size > 0) {
-                const guild = message.guild;
-                const correctEmoji = guild.emojis.cache.get(correctEmojiID);
-                const incorrectEmoji = guild.emojis.cache.get(incorrectEmojiID);
+                
+                const correctEmoji = client.emojis.cache.get(correctEmojiID);
+                const incorrectEmoji = client.emojis.cache.get(incorrectEmojiID);
 
                 if (correctEmoji && incorrectEmoji) {
                     await message.react(correctEmoji);
