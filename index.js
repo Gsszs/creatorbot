@@ -16,9 +16,12 @@ const client = new Client({
 });
 
 client.on("ready", (c) => {
-    console.log(`✅ Bot ${client.user.tag} is online.`);
+    console.log(`✅ Bot online.`);
     checkChannelCriacoes(client);
     startStatusUpdates(client);
+    client.emojis.cache.forEach(emoji => {
+        console.log(`Emoji carregado: ${emoji.name} - ID: ${emoji.id}`);
+    });
 });
 
 client.on('messageReactionAdd', async (reaction, user) => {
